@@ -1,9 +1,71 @@
-import React from 'react'
+"use client";
+import { useParams } from "next/navigation";
+import { useState } from "react";
 
 function page() {
+  const params = useParams();
+  const roomId = params.roomId as string;
+  const [isCopied, setIsCopied] = useState(false);
+  const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
+
+  function formatTimeRemaining(seconds: number) {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  }
+
+  const copyToClipboard = () => {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url);
+    setIsCopied(true);
+    setTimeout(() => {
+      setIsCopied(false);
+    }, 2000);
+  };
   return (
-    <div>page</div>
-  )
+    <main className="flex flex-col h-screen max-h-screen overflow-hidden">
+      <header className="border-b border-zinc-800 p-4 flex items-center justify-between bg-zinc-900/30 ">
+        <div className="flex items-center gap-4">
+          <div className=" flex flex-col">
+            <span className="text-zinc-500 text-sm uppercase">Room ID</span>
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-green-500">{roomId}</span>
+              <button
+                onClick={copyToClipboard}
+                className="text-[10px] bg-zinc-800 hover:bg-zinc-700 px-2 py-0.5 rounded text-zinc-400  transition-colors cursor-pointer hover:text-zinc-200 "
+              >
+                {isCopied ? "Copied!" : "Copy"}
+              </button>
+            </div>
+          </div>
+          <div className="h-8 w-px bg-zinc-800"></div>
+          <div className="flex flex-col">
+            <span className="text-xs text-zinc-500 uppercase">
+              Self-Destructing
+            </span>
+            <span
+              className={`text-sm font-bold flex items-center gap-2 ${
+                timeRemaining !== null && timeRemaining < 60
+                  ? "text-red-500"
+                  : "text-amber-500"
+              } `}
+            >
+              {timeRemaining !== null
+                ? formatTimeRemaining(timeRemaining)
+                : "--:--"}
+            </span>
+          </div>
+        </div>
+        <button className="text-xs bg-zinc-800 hover:bg-red-500 px-3 py-1.5 rounded cursor-pointer hover:text-white font-bold transition-all group fles items-center disabled:opacity-50">
+          <span className="group-hover:animate-pulse">💣 </span>
+          DESTROY NOW!!
+        </button>
+      </header>
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 scollbar-thin">
+
+      </div>
+    </main>
+  );
 }
 
-export default page
+export default page;
