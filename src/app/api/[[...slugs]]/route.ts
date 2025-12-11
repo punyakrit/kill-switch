@@ -27,11 +27,11 @@ const messages = new Elysia({ prefix: '/messages' })
         const { sender, text } = body
         const { roomId } = auth
         const roomExists = await redis.exists(`meta:${roomId}`)
-        if(!roomExists){
+        if (!roomExists) {
             throw new Error("Room not found")
         }
 
-        const message : Message = {
+        const message: Message = {
             id: nanoid(),
             sender,
             text,
@@ -40,7 +40,7 @@ const messages = new Elysia({ prefix: '/messages' })
             token: auth.token,
         }
 
-        await redis.rpush(`messages:${roomId}`, {...message, token: auth.token})
+        await redis.rpush(`messages:${roomId}`, { ...message, token: auth.token })
         await realtime.channel(roomId).emit("chat.message", message)
 
         const remaining = await redis.ttl(`meta:${roomId}`)
@@ -51,7 +51,7 @@ const messages = new Elysia({ prefix: '/messages' })
 
         return { message }
 
-    },{
+    }, {
         query: z.object({
             roomId: z.string().min(8).max(8),
         }),
@@ -60,6 +60,15 @@ const messages = new Elysia({ prefix: '/messages' })
             text: z.string().max(1000),
         })
     })
+    .get("/", async ({ auth }) => {
+        const messages = await redis.lrange<Message>(`messages:${auth.roomId}`, 0, -1)
+        return { messages: messages.map(m => ({ ...m, token: m.token === auth.token ? m.token : undefined })) }
+    }, {
+        query: z.object({
+            roomId: z.string().min(8).max(8),
+        }),
+    })
+
 
 const app = new Elysia({ prefix: '/api' })
     .use(rooms)
