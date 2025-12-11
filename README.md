@@ -1,36 +1,66 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Kill Switch
 
-## Getting Started
+A private, self-destructing chat application built with Next.js and real-time messaging capabilities. Create secure chat rooms that automatically expire after 10 minutes, ensuring your conversations are temporary and private.
 
-First, run the development server:
+## Features
 
+- 🔒 **Self-Destructing Rooms**: Chat rooms automatically expire after 10 minutes
+- ⚡ **Real-Time Messaging**: Instant message delivery using Upstash Realtime
+- 👥 **Private Rooms**: Maximum 2 users per room for intimate conversations
+- 🎭 **Anonymous Identity**: Auto-generated anonymous usernames
+- 💣 **Manual Destruction**: Destroy rooms instantly with a single click
+- 🕐 **Live Countdown**: Real-time countdown timer showing room expiration
+- 🍪 **Token-Based Auth**: Secure cookie-based authentication per room
+
+
+## Installation
+
+1. Clone the repository:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/punyakrit/kill-switch
+cd kill-switch
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Install dependencies:
+```bash
+bun install
+# or
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Set up environment variables (see above)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. Run the development server:
+```bash
+bun dev
+# or
+npm run dev
+```
 
-## Learn More
+5. Open [http://localhost:3000](http://localhost:3000) in your browser
 
-To learn more about Next.js, take a look at the following resources:
+## How It Works
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Room Creation
+1. Users visit the home page and are assigned an anonymous username (stored in localStorage)
+2. Clicking "CREATE SECURE ROOM" generates a unique 8-character room ID
+3. Room metadata is stored in Redis with a 10-minute TTL
+4. User is redirected to `/room/[roomId]`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Room Access
+1. The `proxy.ts` middleware intercepts room access requests
+2. Validates room existence and capacity (max 2 users)
+3. Issues a unique authentication token stored in an HTTP-only cookie
+4. Token is added to the room's connected users list
 
-## Deploy on Vercel
+### Messaging
+1. Messages are sent via POST to `/api/messages`
+2. Messages are stored in Redis lists with room-scoped keys
+3. Realtime events are emitted to all connected users
+4. Messages automatically expire with the room TTL
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Room Destruction
+- **Automatic**: Rooms expire after 10 minutes (600 seconds)
+- **Manual**: Users can click "DESTROY NOW" to instantly delete the room
+- On destruction, all messages and metadata are permanently deleted from Redis
+- All connected users are notified via realtime events
