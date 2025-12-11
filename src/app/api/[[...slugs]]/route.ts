@@ -3,6 +3,7 @@ import { auth } from './auth'
 import { Elysia, t } from 'elysia'
 import { nanoid } from 'nanoid'
 import { z } from 'zod'
+import { Message, realtime } from '@/lib/realtime'
 
 const ROOM_TTL_SECONDS = 60 * 10
 
@@ -30,7 +31,24 @@ const messages = new Elysia({ prefix: '/messages' })
             throw new Error("Room not found")
         }
 
-        const message = await redis.lpush(`messages:${roomId}`, JSON.stringify({ sender, text }))
+        const message : Message = {
+            id: nanoid(),
+            sender,
+            text,
+            timestamp: Date.now(),
+            roomId,
+            token: auth.token,
+        }
+
+        await redis.rpush(`messages:${roomId}`, {...message, token: auth.token})
+        await realtime.channel(roomId).emit("chat.message", message)
+
+        const remaining = await redis.ttl(`meta:${roomId}`)
+
+        await redis.expire(`messages:${roomId}`, remaining)
+        await redis.expire(`history:${roomId}`, remaining)
+        await redis.expire(roomId, remaining)
+
         return { message }
 
     },{
