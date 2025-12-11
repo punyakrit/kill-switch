@@ -3,10 +3,14 @@ import { client } from "@/lib/client";
 import { useMutation } from "@tanstack/react-query";
 import { nanoid } from "nanoid";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import useUsername from "@/hooks/useUsername";
 
-export default function Home() {
+export default function Page() {
+  return <Suspense><Lobby /></Suspense>;
+}
+
+function Lobby() {
   const router = useRouter();
   const username = useUsername();
   const searchParams = useSearchParams();
@@ -29,7 +33,7 @@ export default function Home() {
       <div className="w-full max-w-md space-y-8">
         {wasDestroyed && (
           <div className="bg-red-950/50 border border-red-900  p-4 rounded-md text-sm text-center">
-          <p className="text-red-500 font-bold text-sm">Room Destroyed</p>
+            <p className="text-red-500 font-bold text-sm">Room Destroyed</p>
             <p className="text-zinc-500" text-xs mt-1>
               All messages have been permanently deleted.
             </p>
